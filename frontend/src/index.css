@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-glass-border;
+  }
+  
+  body {
+    @apply bg-background-primary text-text-primary font-sans antialiased;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-background-secondary;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-text-tertiary rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-text-secondary;
+  }
+}
+
+@layer components {
+  /* Glass card effect */
+  .glass-card {
+    @apply bg-glass-bg backdrop-blur-glass border border-glass-border rounded-lg shadow-glass;
+  }
+
+  /* Neon glow button */
+  .btn-glow {
+    @apply shadow-glow-primary transition-all duration-300;
+  }
+
+  .btn-glow:hover {
+    @apply shadow-glow-primary scale-105 -translate-y-0.5;
+  }
+}
+

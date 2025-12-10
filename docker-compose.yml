@@ -1,0 +1,95 @@
+# Docker Compose for AI Anabasis SEO Spider
+
+services:
+  # PostgreSQL Database with persistent volume
+  postgres:
+    image: postgres:15-alpine
+    container_name: seo-spider-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: b190758x
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - seo-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: seo-spider-backend
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:b190758x@postgres:5432/postgres
+      - GEMINI_API_KEY=AIzaSyD7TTB4kfKTEJQZZBH8UFNLXjdo114GNYQ
+      - GEMINI_MODEL=gemini-2.0-flash-exp
+      - ENVIRONMENT=production
+      - DEBUG=False
+    volumes:
+      - ./backend:/app
+      - workspace_data:/app/workspace
+      - backup_data:/app/backups
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - seo-network
+    restart: unless-stopped
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: seo-spider-frontend
+    environment:
+      - VITE_API_URL=http://localhost:8000/api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    networks:
+      - seo-network
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: seo-spider-nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - seo-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  workspace_data:
+    driver: local
+  backup_data:
+    driver: local
+
+networks:
+  seo-network:
+    driver: bridge
+
