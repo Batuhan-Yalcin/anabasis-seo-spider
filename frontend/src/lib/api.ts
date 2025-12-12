@@ -26,7 +26,7 @@ console.log('[API] Final baseURL:', baseURL)
 
 export const api = axios.create({
   baseURL,
-  timeout: 30000,
+  timeout: 300000, // 5 minutes for SEO analysis
   headers: {
     'Content-Type': 'application/json',
   },

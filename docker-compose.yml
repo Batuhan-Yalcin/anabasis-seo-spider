@@ -34,10 +34,15 @@ services:
       - GEMINI_MODEL=gemini-2.0-flash-exp
       - ENVIRONMENT=production
       - DEBUG=False
+      # Playwright configuration
+      - PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
     volumes:
       - ./backend:/app
       - workspace_data:/app/workspace
       - backup_data:/app/backups
+      - reports_data:/app/workspace/reports
+      - screenshots_data:/app/workspace/screenshots
+      - playwright_browsers:/ms-playwright
     ports:
       - "8000:8000"
     depends_on:
@@ -45,6 +50,8 @@ services:
         condition: service_healthy
     networks:
       - seo-network
+    # Increase shared memory for Playwright
+    shm_size: '2gb'
     restart: unless-stopped
 
   # React Frontend
@@ -87,6 +94,12 @@ volumes:
   workspace_data:
     driver: local
   backup_data:
+    driver: local
+  reports_data:
+    driver: local
+  screenshots_data:
+    driver: local
+  playwright_browsers:
     driver: local
 
 networks:

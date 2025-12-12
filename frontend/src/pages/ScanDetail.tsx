@@ -2,7 +2,10 @@ import { motion } from 'framer-motion'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, FileText, AlertCircle, CheckCircle, Play, XCircle, Download } from 'lucide-react'
+// @ts-ignore - jsPDF types
 import jsPDF from 'jspdf'
+// @ts-ignore - autoTable types
+import autoTable from 'jspdf-autotable'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -113,34 +116,6 @@ export function ScanDetail() {
   const exportToPDF = () => {
     const doc = new jsPDF('p', 'mm', 'a4')
     
-    // Use Times font for better Turkish character support
-    doc.setFont('times', 'normal')
-    
-    // Function to fix Turkish characters from AI response
-    const fixTurkishChars = (text: string): string => {
-      if (!text) return ''
-      
-      // Daha agresif karakter düzeltme
-      let fixed = text
-        // Önce tüm _ karakterlerini ş yap
-        .replace(/_/g, 'ş')
-        // Sonra tüm 1'leri ı yap (sayı olmayan yerlerde)
-        .replace(/([a-zçğıöşüA-ZÇĞİÖŞÜ])1/g, '$1ı')  // harf + 1 -> harf + ı
-        .replace(/1([a-zçğıöşüA-ZÇĞİÖŞÜ])/g, 'ı$1')  // 1 + harf -> ı + harf
-        .replace(/\s1\s/g, ' ı ')  // boşluk + 1 + boşluk -> ı
-        .replace(/\s1([,.\s])/g, ' ı$1')  // boşluk + 1 + noktalama -> ı
-        // Diğer bozuk karakterler
-        .replace(/\|/g, 'ı')
-        .replace(/\^/g, 'ğ')
-        .replace(/~/g, 'ü')
-        .replace(/\$/g, 'ş')
-        // Fazla boşlukları temizle
-        .replace(/\s+/g, ' ')
-        .trim()
-        
-      return fixed
-    }
-    
     // Header with gradient-like effect
     doc.setFillColor(59, 130, 246)
     doc.rect(0, 0, 210, 40, 'F')
@@ -148,18 +123,18 @@ export function ScanDetail() {
     // Title
     doc.setTextColor(255, 255, 255)
     doc.setFontSize(24)
-    doc.setFont('times', 'bold')
-    doc.text(fixTurkishChars('SEO Analiz Raporu'), 14, 20)
+    doc.setFont('helvetica', 'bold')
+    doc.text('SEO Analiz Raporu', 14, 20)
     
     // Job Info
     doc.setFontSize(11)
-    doc.setFont('times', 'normal')
-    doc.text(fixTurkishChars(`Dosya: ${job?.upload_filename || 'N/A'}`), 14, 30)
-    doc.text(fixTurkishChars(`Tarih: ${new Date().toLocaleDateString('tr-TR', { 
+    doc.setFont('helvetica', 'normal')
+    doc.text(`Dosya: ${job?.upload_filename || 'N/A'}`, 14, 30)
+    doc.text(`Tarih: ${new Date().toLocaleDateString('tr-TR', { 
       year: 'numeric', 
       month: 'long', 
       day: 'numeric' 
-    })}`), 14, 36)
+    })}`, 14, 36)
     
     // Summary Box
     doc.setFillColor(248, 250, 252)
@@ -167,30 +142,30 @@ export function ScanDetail() {
     
     doc.setTextColor(30, 41, 59)
     doc.setFontSize(10)
-    doc.setFont('times', 'bold')
-    doc.text(fixTurkishChars('OZET'), 14, 52)
+    doc.setFont('helvetica', 'bold')
+    doc.text('OZET', 14, 52)
     
     doc.setFontSize(9)
-    doc.setFont('times', 'normal')
-    doc.text(fixTurkishChars(`Toplam Sorun: ${issues.length}`), 14, 58)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`Toplam Sorun: ${issues.length}`, 14, 58)
     
     // Severity counts with colors
     doc.setTextColor(220, 38, 38)
-    doc.text(fixTurkishChars(`Kritik: ${criticalIssues.length}`), 60, 58)
+    doc.text(`Kritik: ${criticalIssues.length}`, 60, 58)
     doc.setTextColor(234, 88, 12)
-    doc.text(fixTurkishChars(`Yuksek: ${highIssues.length}`), 90, 58)
+    doc.text(`Yuksek: ${highIssues.length}`, 90, 58)
     doc.setTextColor(234, 179, 8)
-    doc.text(fixTurkishChars(`Orta: ${mediumIssues.length}`), 120, 58)
+    doc.text(`Orta: ${mediumIssues.length}`, 120, 58)
     doc.setTextColor(156, 163, 175)
-    doc.text(fixTurkishChars(`Dusuk: ${lowIssues.length}`), 145, 58)
+    doc.text(`Dusuk: ${lowIssues.length}`, 145, 58)
     
     // Status counts
     doc.setTextColor(34, 197, 94)
-    doc.text(fixTurkishChars(`Onaylanan: ${approvedIssues.length}`), 14, 64)
+    doc.text(`Onaylanan: ${approvedIssues.length}`, 14, 64)
     doc.setTextColor(100, 116, 139)
-    doc.text(fixTurkishChars(`Bekleyen: ${issues.filter(i => i.status === 'pending').length}`), 55, 64)
+    doc.text(`Bekleyen: ${issues.filter(i => i.status === 'pending').length}`, 55, 64)
     doc.setTextColor(239, 68, 68)
-    doc.text(fixTurkishChars(`Reddedilen: ${issues.filter(i => i.status === 'rejected').length}`), 95, 64)
+    doc.text(`Reddedilen: ${issues.filter(i => i.status === 'rejected').length}`, 95, 64)
     
     // Issues - Detailed List (not table)
     let yPos = 80
@@ -202,12 +177,11 @@ export function ScanDetail() {
         yPos = 20
       }
       
-      // Issue Box - Dynamic height based on content
-      const boxHeight = 38
+      // Issue Box
       doc.setFillColor(249, 250, 251)
-      doc.rect(10, yPos - 5, 190, boxHeight, 'F')
+      doc.rect(10, yPos - 5, 190, 35, 'F')
       doc.setDrawColor(229, 231, 235)
-      doc.rect(10, yPos - 5, 190, boxHeight, 'S')
+      doc.rect(10, yPos - 5, 190, 35, 'S')
       
       // Priority Badge
       const severityColors: Record<string, [number, number, number]> = {
@@ -217,57 +191,67 @@ export function ScanDetail() {
         low: [156, 163, 175]
       }
       const color = severityColors[issue.severity] || [156, 163, 175]
-      doc.setFillColor(...color)
+      doc.setFillColor(color[0], color[1], color[2])
       doc.roundedRect(12, yPos - 3, 20, 6, 1, 1, 'F')
       doc.setTextColor(255, 255, 255)
       doc.setFontSize(7)
       const severityText = issue.severity === 'critical' ? 'KRITIK' : 
                           issue.severity === 'high' ? 'YUKSEK' : 
                           issue.severity === 'medium' ? 'ORTA' : 'DUSUK'
-      doc.text(fixTurkishChars(severityText), 22, yPos + 1, { align: 'center' })
+      doc.text(severityText, 22, yPos + 1, { align: 'center' })
       
       // Issue Type
       doc.setTextColor(100, 116, 139)
       doc.setFontSize(7)
-      doc.text(fixTurkishChars(issue.issue_type.toUpperCase()), 35, yPos + 1)
+      doc.text(issue.issue_type.toUpperCase(), 35, yPos + 1)
       
       // File Path & Line
       doc.setTextColor(71, 85, 105)
       doc.setFontSize(7)
       const filePath = issue.file_path.split('/').slice(-2).join('/')
-      doc.text(fixTurkishChars(`${filePath} (L${issue.line_number})`), 12, yPos + 7)
+      doc.text(`${filePath} (L${issue.line_number})`, 12, yPos + 7)
       
       // Status Badge
       const statusText = issue.status === 'approved' ? 'ONAYLANDI' : 
                         issue.status === 'rejected' ? 'REDDEDILDI' : 'BEKLEMEDE'
-      const statusColor: [number, number, number] = issue.status === 'approved' ? [34, 197, 94] : 
+      const statusColor = issue.status === 'approved' ? [34, 197, 94] : 
                          issue.status === 'rejected' ? [239, 68, 68] : [100, 116, 139]
-      doc.setFillColor(...statusColor)
+      doc.setFillColor(statusColor[0], statusColor[1], statusColor[2])
       doc.roundedRect(175, yPos - 3, 23, 6, 1, 1, 'F')
       doc.setTextColor(255, 255, 255)
       doc.setFontSize(6)
-      doc.text(fixTurkishChars(statusText), 186.5, yPos + 1, { align: 'center' })
+      doc.text(statusText, 186.5, yPos + 1, { align: 'center' })
       
       // Reason (wrapped text) - Manual wrapping to avoid Turkish character issues
       doc.setTextColor(30, 41, 59)
-      doc.setFontSize(9)
-      doc.setFont('times', 'normal')
+      doc.setFontSize(8)
+      doc.setFont('helvetica', 'normal')
       
-      // Fix Turkish characters first
-      const fixedReason = fixTurkishChars(issue.reason)
+      // Manual text wrapping function for better Turkish support
+      const wrapText = (text: string, maxWidth: number) => {
+        const words = text.split(' ')
+        const lines: string[] = []
+        let currentLine = ''
+        
+        words.forEach(word => {
+          const testLine = currentLine ? `${currentLine} ${word}` : word
+          const textWidth = doc.getTextWidth(testLine)
+          
+          if (textWidth > maxWidth && currentLine) {
+            lines.push(currentLine)
+            currentLine = word
+          } else {
+            currentLine = testLine
+          }
+        })
+        
+        if (currentLine) lines.push(currentLine)
+        return lines
+      }
       
-      // Use jsPDF's built-in text splitting for better rendering
-      const maxWidth = 176
-      const reasonLines = doc.splitTextToSize(fixedReason, maxWidth)
-      
-      let lineY = yPos + 13
-      let lineCount = 0
-      reasonLines.forEach((line: string) => {
-        if (lineCount < 3) {  // Max 3 satır göster
-          doc.text(line, 12, lineY)
-          lineY += 4.5
-          lineCount++
-        }
+      const reasonLines = wrapText(issue.reason, 175).slice(0, 3)
+      reasonLines.forEach((line: string, idx: number) => {
+        doc.text(line, 12, yPos + 13 + (idx * 4))
       })
       
       // Suggested Code (if exists and short)
@@ -277,11 +261,11 @@ export function ScanDetail() {
         doc.setTextColor(71, 85, 105)
         doc.setFontSize(6)
         doc.setFont('courier', 'normal')
-        doc.text(fixTurkishChars(issue.code.substring(0, 80)), 13, yPos + 26)
-        doc.setFont('times', 'normal')
+        doc.text(issue.code.substring(0, 80), 13, yPos + 26)
+        doc.setFont('helvetica', 'normal')
       }
       
-      yPos += 43 // Sorunlar arası daha fazla boşluk
+      yPos += 40
     })
     
     // Footer on last page
@@ -290,8 +274,8 @@ export function ScanDetail() {
       doc.setPage(i)
       doc.setFontSize(8)
       doc.setTextColor(156, 163, 175)
-      doc.text(fixTurkishChars(`Sayfa ${i} / ${pageCount}`), 105, 290, { align: 'center', charSpace: 0 })
-      doc.text(fixTurkishChars('AI Anabasis SEO Spider'), 14, 290, { charSpace: 0 })
+      doc.text(`Sayfa ${i} / ${pageCount}`, 105, 290, { align: 'center' })
+      doc.text('AI Anabasis SEO Spider', 14, 290)
     }
     
     // Save PDF

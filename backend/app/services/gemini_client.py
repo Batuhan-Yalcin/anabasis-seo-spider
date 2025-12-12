@@ -1,10 +1,11 @@
 import google.generativeai as genai
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from app.config import get_settings
 from app.schemas import GeminiPromptData, GeminiResponse
 from app.services.rate_limiter import rate_limiter
 import json
 import logging
+import asyncio
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -151,6 +152,40 @@ class GeminiClient:
                 logger.error(f"Raw response: {response_text}")
                 raise ValueError(f"Invalid JSON from Gemini: {e}")
             
+            except Exception as e:
+                logger.error(f"Gemini API error: {e}")
+                raise
+    
+    @retry(
+        stop=stop_after_attempt(5),  # Increased from 3 to 5 retries
+        wait=wait_exponential(multiplier=2, min=4, max=30)  # Longer wait: 4s, 8s, 16s, 30s, 30s
+    )
+    async def generate_content(self, prompt: str) -> str:
+        """
+        Generate content from Gemini API with extended retry handling
+        
+        Args:
+            prompt: The prompt text to send to Gemini
+            
+        Returns:
+            Response text from Gemini
+        """
+        # Acquire rate limiter slot (blocks if limit reached)
+        async with rate_limiter:
+            try:
+                logger.debug(f"Generating content with Gemini (prompt length: {len(prompt)})")
+                # Run in thread pool to avoid blocking, with extended timeout handling
+                import asyncio
+                response = await asyncio.wait_for(
+                    asyncio.to_thread(self.model.generate_content, prompt),
+                    timeout=180.0  # 3 minutes per attempt (Gemini SDK default is 60s)
+                )
+                response_text = response.text.strip()
+                logger.debug(f"Gemini response length: {len(response_text)}")
+                return response_text
+            except asyncio.TimeoutError:
+                logger.warning("Gemini API call timed out after 180s, will retry")
+                raise
             except Exception as e:
                 logger.error(f"Gemini API error: {e}")
                 raise

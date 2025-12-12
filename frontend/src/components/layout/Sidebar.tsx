@@ -9,6 +9,7 @@ import {
   Activity,
   ChevronLeft,
   ChevronRight,
+  TrendingUp,
 } from 'lucide-react'
 import { useAppStore } from '@/stores/useAppStore'
 import { useTranslation } from '@/lib/i18n'
@@ -18,6 +19,7 @@ const navigationKeys = [
   { key: 'nav.dashboard', href: '/', icon: LayoutDashboard },
   { key: 'nav.projects', href: '/projects', icon: FolderOpen },
   { key: 'nav.scans', href: '/scans', icon: Search },
+  { key: 'nav.seo_spider', href: '/seo-spider', icon: TrendingUp },
   { key: 'nav.history', href: '/history', icon: History },
   { key: 'nav.settings', href: '/settings', icon: Settings },
   { key: 'nav.monitoring', href: '/monitoring', icon: Activity },

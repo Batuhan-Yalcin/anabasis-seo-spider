@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 import logging
 
 from app.database import init_db
-from app.routers import jobs, analysis, patches, deduplication, monitoring
+from app.routers import jobs, analysis, patches, deduplication, monitoring, seo_spider
 from app.config import get_settings
 
 # Configure logging
@@ -59,6 +59,7 @@ app.include_router(analysis.router, prefix="/api")
 app.include_router(patches.router, prefix="/api")
 app.include_router(deduplication.router, prefix="/api")
 app.include_router(monitoring.router, prefix="/api")
+app.include_router(seo_spider.router)
 
 
 @app.get("/")
